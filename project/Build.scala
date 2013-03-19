@@ -7,8 +7,8 @@ object ScalaTOBuild extends Build {
     organization := "net.tixxit",
     version := "0.1.0-SNAPSHOT",
 
-    scalaVersion := "2.9.2",
-    // scalaBinaryVersion := "2.10",
+    scalaVersion := "2.10.1",
+    scalaBinaryVersion := "2.10",
 
     licenses := Seq("BSD-style" -> url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("http://tixxit.net/")),
@@ -20,11 +20,11 @@ object ScalaTOBuild extends Build {
 
     scalacOptions ++= Seq(
       //"-Yinline-warnings",
-      "-Xlog-implicits",
+      // "-Xlog-implicits",
       "-deprecation",
-      "-unchecked"
+      "-unchecked",
       // "-optimize",
-      //"-feature"
+      "-feature"
     )
   )
 

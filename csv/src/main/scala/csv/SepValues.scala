@@ -17,7 +17,7 @@ object SepValues extends SepValues1 {
   final def deserialize[A: SepValues](format: Format)(v: String): Option[A] =
     SepValues[A].deserialize(format)(v)
 
-  implicit def hnil: SepValues[HNil] = new SepValues[HNil] {
+  implicit def hnil = new SepValues[HNil] {
     private val Whitespace = """(\s*)""".r
 
     def serialize(format: Format)(nil: HNil): Option[String] = None
@@ -32,7 +32,7 @@ object SepValues extends SepValues1 {
       def serialize(format: Format)(h: H :: T): Option[String] = {
         val head = Value.serialize(h.head)
         val tail = SepValues.serialize(format)(h.tail)
-        tail map (format.cons(head, _)) orElse Some(head)
+        Some(format.cons(head, tail))
       }
 
       def deserialize(format: Format)(values: String): Option[H :: T] = {
@@ -46,31 +46,27 @@ object SepValues extends SepValues1 {
 }
 
 trait SepValues1 extends SepValues0 {
-  implicit def appender[A, S <: HList, // What we know up-front.
+  implicit def appender[A, S <: HList,
                         P <: HList,
-                        L <: HList,
-                        N <: Nat](implicit
+                        L <: HList](implicit
       iso: Iso[A, P],
-      prepend: PrependAux[P, S, L],
-      lenOfP: LengthAux[P, N],
-      take: TakeAux[L, N, P],
-      drop: DropAux[L, N, S],
+      splitter: Splitter[P, S, L],
       sv: SepValues[L]): SepValues[A :: S] = {
-
     new SepValues[A :: S] {
       def serialize(format: Format)(h: A :: S): Option[String] =
-        sv.serialize(format)(prepend(iso.to(h.head), h.tail))
+        sv.serialize(format)(splitter.conjoin(iso.to(h.head), h.tail))
 
       def deserialize(format: Format)(values: String): Option[A :: S] =
         sv.deserialize(format)(values) map { hs =>
-          iso.from(take(hs)) :: drop(hs)
+          val (p, s) = splitter.disjoin(hs)
+          iso.from(p) :: s
         }
     }
   }
 }
 
 trait SepValues0 {
-  implicit def iso[A, L <: HList](implicit iso: Iso[A, L], sv: SepValues[L]): SepValues[A] =
+  implicit def iso[A <: Product, L <: HList](implicit iso: Iso[A, L], sv: SepValues[L]): SepValues[A] =
     new SepValues[A] {
       def serialize(format: Format)(a: A): Option[String] =
         sv.serialize(format)(iso.to(a))

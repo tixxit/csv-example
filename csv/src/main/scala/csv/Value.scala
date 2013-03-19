@@ -25,6 +25,15 @@ object Value {
     }
   }
 
+  implicit object DoubleValue extends Value[Double] {
+    def serialize(x: Double) = x.toString
+    def deserialize(value: String) = try {
+      Some(value.toDouble)
+    } catch { case nfe: NumberFormatException =>
+      None
+    }
+  }
+
   implicit object StringValue extends Value[String] {
     def serialize(a: String): String = a
     def deserialize(value: String): Option[String] = Some(value)
